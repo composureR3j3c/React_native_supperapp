@@ -7,13 +7,17 @@ export default function useLocations() {
   const [locations, setLocations] = useState([]);
   const [loaded, setLoaded] = useState(false);
 
-  useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY)
+  const reload = useCallback(() => {
+    return AsyncStorage.getItem(STORAGE_KEY)
       .then((raw) => {
-        if (raw) setLocations(JSON.parse(raw));
+        setLocations(raw ? JSON.parse(raw) : []);
       })
       .finally(() => setLoaded(true));
   }, []);
+
+  useEffect(() => {
+    reload();
+  }, [reload]);
 
   const persist = useCallback((next) => {
     setLocations(next);
@@ -34,5 +38,5 @@ export default function useLocations() {
     [locations, persist]
   );
 
-  return { locations, loaded, addLocation, deleteLocation };
+  return { locations, loaded, addLocation, deleteLocation, reload };
 }

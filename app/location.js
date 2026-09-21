@@ -1,7 +1,7 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
-import { Stack } from 'expo-router';
-import { useState } from 'react';
+import { router, Stack, useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -15,6 +15,16 @@ import {
 } from 'react-native';
 
 import useLocations from '../hooks/useLocations';
+import { resolveLocationLabel } from '../lib/resolveLocationLabel';
+
+const LOCATION_TIMEOUT_MS = 15000;
+
+function withTimeout(promise, ms, timeoutError) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(timeoutError), ms)),
+  ]);
+}
 
 function openInMaps(latitude, longitude, label) {
   const encodedLabel = encodeURIComponent(label);
@@ -27,10 +37,17 @@ function openInMaps(latitude, longitude, label) {
 }
 
 export default function LocationScreen() {
-  const { locations, loaded, addLocation, deleteLocation } = useLocations();
+  const { locations, loaded, addLocation, deleteLocation, reload } = useLocations();
   const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+
+  // Picking a location happens on a separate page — refresh the list when we come back to it.
+  useFocusEffect(
+    useCallback(() => {
+      reload();
+    }, [reload])
+  );
 
   const handleSaveCurrentLocation = async () => {
     setError(null);
@@ -42,21 +59,13 @@ export default function LocationScreen() {
         return;
       }
 
-      const position = await Location.getCurrentPositionAsync({});
+      const position = await withTimeout(
+        Location.getCurrentPositionAsync({}),
+        LOCATION_TIMEOUT_MS,
+        new Error('timeout')
+      );
       const { latitude, longitude } = position.coords;
-
-      const customName = name.trim();
-      let label = customName || `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
-      if (!customName) {
-        try {
-          const [place] = await Location.reverseGeocodeAsync({ latitude, longitude });
-          if (place) {
-            label = [place.name, place.city, place.region].filter(Boolean).join(', ') || label;
-          }
-        } catch {
-          // Reverse geocoding isn't supported on every platform (e.g. web) — fall back to coordinates.
-        }
-      }
+      const label = await resolveLocationLabel(latitude, longitude, name);
 
       addLocation({
         id: Date.now().toString(),
@@ -66,11 +75,19 @@ export default function LocationScreen() {
         savedAt: Date.now(),
       });
       setName('');
-    } catch {
-      setError('Could not get your current location. Please try again.');
+    } catch (err) {
+      setError(
+        err?.message === 'timeout'
+          ? 'Could not get a location fix in time. Try moving outdoors and try again.'
+          : 'Could not get your current location. Please try again.'
+      );
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleSelectFromMap = () => {
+    router.push({ pathname: '/pick-location', params: { name } });
   };
 
   return (
@@ -133,6 +150,11 @@ export default function LocationScreen() {
             )}
           />
         )}
+
+        <Pressable style={styles.mapButton} onPress={handleSelectFromMap}>
+          <MaterialCommunityIcons name="google-maps" size={20} color="#fff" />
+          <Text style={styles.mapButtonText}>Select from map</Text>
+        </Pressable>
       </View>
     </>
   );
@@ -206,5 +228,19 @@ const styles = StyleSheet.create({
   rowCoords: {
     fontSize: 12,
     color: '#999',
+  },
+  mapButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#4285F4',
+    borderRadius: 10,
+    paddingVertical: 12,
+  },
+  mapButtonText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600',
   },
 });
