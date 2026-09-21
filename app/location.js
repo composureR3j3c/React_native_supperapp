@@ -1,10 +1,30 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { Stack } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  ActivityIndicator,
+  FlatList,
+  Linking,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 
 import useLocations from '../hooks/useLocations';
+
+function openInMaps(latitude, longitude, label) {
+  const encodedLabel = encodeURIComponent(label);
+  const url = Platform.select({
+    ios: `maps:0,0?q=${encodedLabel}@${latitude},${longitude}`,
+    android: `geo:0,0?q=${latitude},${longitude}(${encodedLabel})`,
+    default: `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`,
+  });
+  Linking.openURL(url);
+}
 
 export default function LocationScreen() {
   const { locations, loaded, addLocation, deleteLocation } = useLocations();
@@ -99,6 +119,13 @@ export default function LocationScreen() {
                     {item.latitude.toFixed(5)}, {item.longitude.toFixed(5)}
                   </Text>
                 </View>
+                <Pressable
+                  onPress={() => openInMaps(item.latitude, item.longitude, item.label)}
+                  hitSlop={8}
+                  accessibilityLabel="Open in Maps"
+                >
+                  <MaterialCommunityIcons name="google-maps" size={22} color="#2e7d32" />
+                </Pressable>
                 <Pressable onPress={() => deleteLocation(item.id)} hitSlop={8}>
                   <Ionicons name="trash-outline" size={20} color="#c62828" />
                 </Pressable>

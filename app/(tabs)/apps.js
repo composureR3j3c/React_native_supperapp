@@ -4,11 +4,13 @@ import AppTile from '../../components/AppTile';
 
 const APPS = [
   { key: 'tasks', href: '/tasks', label: 'Tasks', icon: 'checkbox' },
-  { key: 'finance', href: '/finance', label: 'Finance', icon: 'wallet' },
-  { key: 'habits', href: '/habits', label: 'Habits', icon: 'flame' },
-  { key: 'documents', href: '/documents', label: 'Documents', icon: 'document-text' },
   { key: 'location', href: '/location', label: 'Location', icon: 'location' },
-  { key: 'profile', href: '/profile', label: 'Profile', icon: 'person' },
+ 
+  { key: 'quickContacts', href: '/contact', label: 'Quick Contacts', icon: 'people' },
+  { key: 'music', href: '/music', label: 'Music', icon: 'musical-notes' },
+
+
+   { key: 'profile', href: '/profile', label: 'Profile', icon: 'person' },
 ];
 
 const COLUMNS = 2;

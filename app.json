@@ -30,6 +30,12 @@
         {
           "locationWhenInUsePermission": "Allow LifeOS to use your location to save places you visit."
         }
+      ],
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "Allow LifeOS to access your contacts."
+        }
       ]
     ],
     "experiments": {
