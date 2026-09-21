@@ -3,13 +3,13 @@ import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import AppTile from '../../components/AppTile';
 
 const APPS = [
-  { key: 'tasks', href: '/tasks', label: 'Tasks', icon: 'checkbox' },
-  { key: 'location', href: '/location', label: 'Location', icon: 'location' },
+ { key: 'location', href: '/location', label: 'Location', icon: 'location' },
  
   { key: 'quickContacts', href: '/contact', label: 'Quick Contacts', icon: 'people' },
   { key: 'music', href: '/music', label: 'Music', icon: 'musical-notes' },
 
-
+ { key: 'tasks', href: '/tasks', label: 'Tasks', icon: 'checkbox' },
+  
    { key: 'profile', href: '/profile', label: 'Profile', icon: 'person' },
 ];
 
