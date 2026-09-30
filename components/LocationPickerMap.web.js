@@ -1,6 +1,9 @@
 import { StyleSheet, Text, View } from 'react-native';
 
+import { useTheme, useThemedStyles } from '../theme/ThemeProvider';
+
 export default function LocationPickerMap({ style }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={[styles.wrap, style]}>
       <Text style={styles.text}>
@@ -10,17 +13,18 @@ export default function LocationPickerMap({ style }) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c) =>
+  StyleSheet.create({
   wrap: {
     padding: 16,
     borderRadius: 12,
-    backgroundColor: '#f7f7f7',
+    backgroundColor: c.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
   text: {
-    fontSize: 13,
-    color: '#888',
+    fontSize: 14,
+    color: c.textSecondary,
     fontStyle: 'italic',
     textAlign: 'center',
   },

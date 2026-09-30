@@ -38,5 +38,17 @@ export default function useLocations() {
     [locations, persist]
   );
 
-  return { locations, loaded, addLocation, deleteLocation, reload };
+  const updateLocation = useCallback(
+    (id, changes) => {
+      persist(locations.map((location) => (location.id === id ? { ...location, ...changes } : location)));
+    },
+    [locations, persist]
+  );
+
+  const markLocationUsed = useCallback(
+    (id) => updateLocation(id, { lastUsedAt: Date.now() }),
+    [updateLocation]
+  );
+
+  return { locations, loaded, addLocation, deleteLocation, updateLocation, markLocationUsed, reload };
 }

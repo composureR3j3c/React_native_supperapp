@@ -14,9 +14,12 @@ import {
 import DraggableFlatList, { ScaleDecorator } from 'react-native-draggable-flatlist';
 
 import useTasks from '../hooks/useTasks';
-import { PRIORITY_COLORS, PRIORITY_LABELS, PRIORITY_ORDER } from '../lib/priority';
+import { PRIORITY_LABELS, PRIORITY_ORDER } from '../lib/priority';
+import { useTheme, useThemedStyles } from '../theme/ThemeProvider';
 
 export default function TasksScreen() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const { tasks, loaded, addTask, toggleTask, deleteTask, cyclePriority, setAllTasks } = useTasks();
   const [title, setTitle] = useState('');
   const [hideCompleted, setHideCompleted] = useState(false);
@@ -87,6 +90,7 @@ export default function TasksScreen() {
         <View style={styles.container}>
           <View style={styles.inputRow}>
             <TextInput
+              placeholderTextColor={colors.placeholder}
               style={styles.input}
               placeholder="Add a task..."
               value={title}
@@ -95,13 +99,13 @@ export default function TasksScreen() {
               returnKeyType="done"
             />
             <Pressable style={styles.addButton} onPress={handleAdd}>
-              <Ionicons name="add" size={22} color="#fff" />
+              <Ionicons name="add" size={22} color={colors.onNeutralButton} />
             </Pressable>
           </View>
 
           <View style={styles.hideRow}>
             <Text style={styles.hideLabel}>Hide completed</Text>
-            <Switch value={hideCompleted} onValueChange={setHideCompleted} />
+            <Switch value={hideCompleted} onValueChange={setHideCompleted} trackColor={{ false: colors.border, true: colors.primary }} thumbColor={colors.background} />
           </View>
 
           {loaded && sections.length === 0 ? (
@@ -121,7 +125,7 @@ export default function TasksScreen() {
                 if (entry.type === 'header') {
                   return (
                     <View style={styles.sectionHeader}>
-                      <View style={[styles.sectionDot, { backgroundColor: PRIORITY_COLORS[entry.priority] }]} />
+                      <View style={[styles.sectionDot, { backgroundColor: colors.priority[entry.priority] }]} />
                       <Text style={styles.sectionTitle}>{entry.title}</Text>
                       <Text style={styles.sectionCount}>{entry.count}</Text>
                     </View>
@@ -139,13 +143,13 @@ export default function TasksScreen() {
                         hitSlop={8}
                         accessibilityLabel="Drag to reorder or change priority group"
                       >
-                        <Ionicons name="reorder-three-outline" size={22} color="#999" />
+                        <Ionicons name="reorder-three-outline" size={22} color={colors.textSecondary} />
                       </Pressable>
                       <Pressable style={styles.rowMain} onPress={() => toggleTask(item.id)}>
                         <Ionicons
                           name={item.done ? 'checkbox' : 'square-outline'}
                           size={22}
-                          color={item.done ? '#2e7d32' : '#666'}
+                          color={item.done ? colors.success : colors.textSecondary}
                         />
                         <Text style={[styles.rowText, item.done && styles.rowTextDone]} numberOfLines={2}>
                           {item.title}
@@ -159,11 +163,11 @@ export default function TasksScreen() {
                         <Ionicons
                           name={priority === 'none' ? 'flag-outline' : 'flag'}
                           size={20}
-                          color={PRIORITY_COLORS[priority]}
+                          color={colors.priority[priority]}
                         />
                       </Pressable>
                       <Pressable onPress={() => deleteTask(item.id)} hitSlop={8} style={styles.trashButton}>
-                        <Ionicons name="trash-outline" size={20} color="#c62828" />
+                        <Ionicons name="trash-outline" size={20} color={colors.danger} />
                       </Pressable>
                     </View>
                   </ScaleDecorator>
@@ -177,14 +181,15 @@ export default function TasksScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c) =>
+  StyleSheet.create({
   flex: {
     flex: 1,
   },
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#fff',
+    backgroundColor: c.background,
     gap: 16,
   },
   inputRow: {
@@ -193,8 +198,9 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
+    color: c.text,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: c.border,
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 10,
@@ -204,7 +210,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 10,
-    backgroundColor: '#333',
+    backgroundColor: c.neutralButton,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -215,10 +221,10 @@ const styles = StyleSheet.create({
   },
   hideLabel: {
     fontSize: 14,
-    color: '#444',
+    color: c.textSecondary,
   },
   empty: {
-    color: '#888',
+    color: c.textSecondary,
     fontSize: 14,
   },
   list: {
@@ -237,16 +243,16 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   sectionTitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
-    color: '#444',
+    color: c.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     flex: 1,
   },
   sectionCount: {
-    fontSize: 13,
-    color: '#999',
+    fontSize: 14,
+    color: c.textSecondary,
   },
   row: {
     flexDirection: 'row',
@@ -255,11 +261,11 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 14,
     marginBottom: 10,
-    backgroundColor: '#f7f7f7',
+    backgroundColor: c.surface,
     borderRadius: 12,
   },
   rowActive: {
-    backgroundColor: '#ececec',
+    backgroundColor: c.surfaceActive,
   },
   rowMain: {
     flexDirection: 'row',
@@ -269,12 +275,12 @@ const styles = StyleSheet.create({
   },
   rowText: {
     fontSize: 15,
-    color: '#222',
+    color: c.text,
     flexShrink: 1,
   },
   rowTextDone: {
     textDecorationLine: 'line-through',
-    color: '#999',
+    color: c.textSecondary,
   },
   trashButton: {
     marginLeft: 2,

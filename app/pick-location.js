@@ -7,6 +7,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-nati
 import LocationPickerMap from '../components/LocationPickerMap';
 import useLocations from '../hooks/useLocations';
 import { resolveLocationLabel } from '../lib/resolveLocationLabel';
+import { useTheme, useThemedStyles } from '../theme/ThemeProvider';
 
 const DEFAULT_REGION = {
   latitude: 20,
@@ -16,6 +17,8 @@ const DEFAULT_REGION = {
 };
 
 export default function PickLocationScreen() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const { name } = useLocalSearchParams();
   const { addLocation } = useLocations();
   const [initialRegion, setInitialRegion] = useState(DEFAULT_REGION);
@@ -87,10 +90,10 @@ export default function PickLocationScreen() {
             disabled={saving || !pickedCoords}
           >
             {saving ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={colors.onNeutralButton} />
             ) : (
               <>
-                <Ionicons name="pin" size={18} color="#fff" />
+                <Ionicons name="pin" size={18} color={colors.onNeutralButton} />
                 <Text style={styles.saveButtonText}>Save pinned location</Text>
               </>
             )}
@@ -101,10 +104,11 @@ export default function PickLocationScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c) =>
+  StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: c.background,
   },
   map: {
     flex: 1,
@@ -114,8 +118,8 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   hint: {
-    fontSize: 12,
-    color: '#888',
+    fontSize: 14,
+    color: c.textSecondary,
     textAlign: 'center',
   },
   saveButton: {
@@ -123,7 +127,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#333',
+    backgroundColor: c.neutralButton,
     borderRadius: 10,
     paddingVertical: 12,
   },
@@ -131,13 +135,13 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   saveButtonText: {
-    color: '#fff',
+    color: c.onNeutralButton,
     fontSize: 15,
     fontWeight: '600',
   },
   error: {
-    color: '#c62828',
-    fontSize: 13,
+    color: c.danger,
+    fontSize: 14,
     textAlign: 'center',
   },
 });

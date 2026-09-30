@@ -5,8 +5,6 @@ import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
-  Linking,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -15,7 +13,10 @@ import {
 } from 'react-native';
 
 import useLocations from '../hooks/useLocations';
+import { openInMaps } from '../lib/openApps';
+import { encodePlusCode } from '../lib/plusCode';
 import { resolveLocationLabel } from '../lib/resolveLocationLabel';
+import { useTheme, useThemedStyles } from '../theme/ThemeProvider';
 
 const LOCATION_TIMEOUT_MS = 15000;
 
@@ -26,18 +27,85 @@ function withTimeout(promise, ms, timeoutError) {
   ]);
 }
 
-function openInMaps(latitude, longitude, label) {
-  const encodedLabel = encodeURIComponent(label);
-  const url = Platform.select({
-    ios: `maps:0,0?q=${encodedLabel}@${latitude},${longitude}`,
-    android: `geo:0,0?q=${latitude},${longitude}(${encodedLabel})`,
-    default: `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`,
-  });
-  Linking.openURL(url);
+function LocationRow({ item, onRename, onDelete, onOpen }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(item.label);
+
+  const startEditing = () => {
+    setDraft(item.label);
+    setEditing(true);
+  };
+
+  const saveName = () => {
+    const trimmed = draft.trim();
+    if (trimmed && trimmed !== item.label) onRename(trimmed);
+    setEditing(false);
+  };
+
+  return (
+    <View style={styles.row}>
+      <Ionicons name="location" size={20} color={colors.textSecondary} />
+      <View style={styles.rowText}>
+        {editing ? (
+          <TextInput
+            placeholderTextColor={colors.placeholder}
+            style={styles.nameInput}
+            value={draft}
+            onChangeText={setDraft}
+            onSubmitEditing={saveName}
+            returnKeyType="done"
+            autoFocus
+            selectTextOnFocus
+          />
+        ) : (
+          <Text style={styles.rowLabel} numberOfLines={2}>
+            {item.label}
+          </Text>
+        )}
+        <Text style={styles.rowPlusCode} selectable>
+          Plus Code: {encodePlusCode(item.latitude, item.longitude)}
+        </Text>
+        <Text style={styles.rowCoords} selectable>
+          Lat {item.latitude.toFixed(5)}, Lng {item.longitude.toFixed(5)}
+        </Text>
+      </View>
+
+      {editing ? (
+        <>
+          <Pressable onPress={saveName} hitSlop={8} accessibilityLabel="Save name">
+            <Ionicons name="checkmark" size={22} color={colors.success} />
+          </Pressable>
+          <Pressable onPress={() => setEditing(false)} hitSlop={8} accessibilityLabel="Cancel editing">
+            <Ionicons name="close" size={22} color={colors.textSecondary} />
+          </Pressable>
+        </>
+      ) : (
+        <>
+          <Pressable onPress={startEditing} hitSlop={8} accessibilityLabel="Edit name">
+            <Ionicons name="pencil" size={19} color={colors.textSecondary} />
+          </Pressable>
+          <Pressable
+            onPress={onOpen}
+            hitSlop={8}
+            accessibilityLabel="Open in Maps"
+          >
+            <MaterialCommunityIcons name="google-maps" size={22} color={colors.success} />
+          </Pressable>
+          <Pressable onPress={onDelete} hitSlop={8} accessibilityLabel="Delete location">
+            <Ionicons name="trash-outline" size={20} color={colors.danger} />
+          </Pressable>
+        </>
+      )}
+    </View>
+  );
 }
 
 export default function LocationScreen() {
-  const { locations, loaded, addLocation, deleteLocation, reload } = useLocations();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+  const { locations, loaded, addLocation, deleteLocation, updateLocation, markLocationUsed, reload } = useLocations();
   const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -98,6 +166,7 @@ export default function LocationScreen() {
         <Text style={styles.description}>Saved places and location-based reminders.</Text>
 
         <TextInput
+          placeholderTextColor={colors.placeholder}
           style={styles.input}
           placeholder="Name (e.g. Home, Work)"
           value={name}
@@ -107,10 +176,10 @@ export default function LocationScreen() {
 
         <Pressable style={styles.saveButton} onPress={handleSaveCurrentLocation} disabled={saving}>
           {saving ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color={colors.onNeutralButton} />
           ) : (
             <>
-              <Ionicons name="locate" size={18} color="#fff" />
+              <Ionicons name="locate" size={18} color={colors.onNeutralButton} />
               <Text style={styles.saveButtonText}>Save current location</Text>
             </>
           )}
@@ -126,33 +195,21 @@ export default function LocationScreen() {
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.list}
             renderItem={({ item }) => (
-              <View style={styles.row}>
-                <Ionicons name="location" size={20} color="#333" />
-                <View style={styles.rowText}>
-                  <Text style={styles.rowLabel} numberOfLines={1}>
-                    {item.label}
-                  </Text>
-                  <Text style={styles.rowCoords}>
-                    {item.latitude.toFixed(5)}, {item.longitude.toFixed(5)}
-                  </Text>
-                </View>
-                <Pressable
-                  onPress={() => openInMaps(item.latitude, item.longitude, item.label)}
-                  hitSlop={8}
-                  accessibilityLabel="Open in Maps"
-                >
-                  <MaterialCommunityIcons name="google-maps" size={22} color="#2e7d32" />
-                </Pressable>
-                <Pressable onPress={() => deleteLocation(item.id)} hitSlop={8}>
-                  <Ionicons name="trash-outline" size={20} color="#c62828" />
-                </Pressable>
-              </View>
+              <LocationRow
+                item={item}
+                onRename={(label) => updateLocation(item.id, { label })}
+                onDelete={() => deleteLocation(item.id)}
+                onOpen={() => {
+                  markLocationUsed(item.id);
+                  openInMaps(item.latitude, item.longitude, item.label);
+                }}
+              />
             )}
           />
         )}
 
         <Pressable style={styles.mapButton} onPress={handleSelectFromMap}>
-          <MaterialCommunityIcons name="google-maps" size={20} color="#fff" />
+          <MaterialCommunityIcons name="google-maps" size={20} color={colors.onPrimary} />
           <Text style={styles.mapButtonText}>Select from map</Text>
         </Pressable>
       </View>
@@ -160,24 +217,27 @@ export default function LocationScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
     gap: 16,
-    backgroundColor: '#fff',
+    backgroundColor: c.background,
   },
   title: {
     fontSize: 24,
     fontWeight: '700',
+    color: c.text,
   },
   description: {
     fontSize: 15,
-    color: '#666',
+    color: c.textSecondary,
   },
   input: {
+    color: c.text,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: c.border,
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 10,
@@ -188,21 +248,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#333',
+    backgroundColor: c.neutralButton,
     borderRadius: 10,
     paddingVertical: 12,
   },
   saveButtonText: {
-    color: '#fff',
+    color: c.onNeutralButton,
     fontSize: 15,
     fontWeight: '600',
   },
   error: {
-    color: '#c62828',
-    fontSize: 13,
+    color: c.danger,
+    fontSize: 14,
   },
   empty: {
-    color: '#888',
+    color: c.textSecondary,
     fontSize: 14,
   },
   list: {
@@ -214,7 +274,7 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingVertical: 12,
     paddingHorizontal: 14,
-    backgroundColor: '#f7f7f7',
+    backgroundColor: c.surface,
     borderRadius: 12,
   },
   rowText: {
@@ -223,23 +283,36 @@ const styles = StyleSheet.create({
   },
   rowLabel: {
     fontSize: 15,
-    color: '#222',
+    fontWeight: '600',
+    color: c.text,
+  },
+  nameInput: {
+    fontSize: 15,
+    color: c.text,
+    borderBottomWidth: 1,
+    borderBottomColor: c.primary,
+    paddingVertical: 2,
+  },
+  rowPlusCode: {
+    fontSize: 14,
+    color: c.primary,
+    fontWeight: '500',
   },
   rowCoords: {
-    fontSize: 12,
-    color: '#999',
+    fontSize: 14,
+    color: c.textSecondary,
   },
   mapButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#4285F4',
+    backgroundColor: c.primary,
     borderRadius: 10,
     paddingVertical: 12,
   },
   mapButtonText: {
-    color: '#fff',
+    color: c.onPrimary,
     fontSize: 15,
     fontWeight: '600',
   },

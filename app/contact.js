@@ -9,7 +9,6 @@ import { Stack } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Linking,
   Pressable,
   SectionList,
   StyleSheet,
@@ -19,9 +18,14 @@ import {
 } from 'react-native';
 
 import useFavoriteContacts from '../hooks/useFavoriteContacts';
+import { callNumber } from '../lib/openApps';
+import { useTheme, useThemedStyles } from '../theme/ThemeProvider';
 
 export default function ContactScreen() {
-  const { favoriteIds, loaded: favoritesLoaded, toggleFavorite, mergeFavorites } = useFavoriteContacts();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+  const { favoriteIds, loaded: favoritesLoaded, toggleFavorite, mergeFavorites, markContactUsed } =
+    useFavoriteContacts();
   const [contacts, setContacts] = useState([]);
   const [status, setStatus] = useState('loading'); // 'loading' | 'ready' | 'denied' | 'error'
   const [pickerError, setPickerError] = useState(null);
@@ -63,9 +67,10 @@ export default function ContactScreen() {
     }
   }, [favoritesLoaded]);
 
-  const callContact = (phone) => {
+  const callContact = (id, phone) => {
     if (!phone) return;
-    Linking.openURL(`tel:${phone}`);
+    markContactUsed(id);
+    callNumber(phone);
   };
 
   const handleOpenContacts = async () => {
@@ -110,11 +115,11 @@ export default function ContactScreen() {
 
         <View style={styles.favoritesRow}>
           <Text style={styles.favoritesLabel}>Show favorites only</Text>
-          <Switch value={favoritesOnly} onValueChange={setFavoritesOnly} />
+          <Switch value={favoritesOnly} onValueChange={setFavoritesOnly} trackColor={{ false: colors.border, true: colors.primary }} thumbColor={colors.background} />
         </View>
 
         {status === 'loading' || !favoritesLoaded ? (
-          <ActivityIndicator style={styles.centerSpinner} />
+          <ActivityIndicator color={colors.primary} style={styles.centerSpinner} />
         ) : status === 'denied' ? (
           <View style={styles.messageBox}>
             <Text style={styles.message}>
@@ -152,12 +157,12 @@ export default function ContactScreen() {
                     <Ionicons
                       name={isFavorite ? 'star' : 'star-outline'}
                       size={20}
-                      color={isFavorite ? '#f1ab15' : '#999'}
+                      color={isFavorite ? colors.favorite : colors.textSecondary}
                     />
                   </Pressable>
                   <Pressable
                     style={styles.rowText}
-                    onPress={() => callContact(phone)}
+                    onPress={() => callContact(item.id, phone)}
                     disabled={!phone}
                   >
                     <Text style={styles.rowName} numberOfLines={1}>
@@ -168,7 +173,7 @@ export default function ContactScreen() {
                     </Text>
                   </Pressable>
                   {phone ? (
-                    <Ionicons name="call-outline" size={20} color="#2e7d32" />
+                    <Ionicons name="call-outline" size={20} color={colors.success} />
                   ) : null}
                 </View>
               );
@@ -178,7 +183,7 @@ export default function ContactScreen() {
 
         {pickerError ? <Text style={styles.pickerError}>{pickerError}</Text> : null}
         <Pressable style={styles.contactsLink} onPress={handleOpenContacts}>
-          <Ionicons name="people" size={18} color="#333" />
+          <Ionicons name="people" size={18} color={colors.textSecondary} />
           <Text style={styles.contactsLinkText}>Open Contacts</Text>
         </Pressable>
       </View>
@@ -186,20 +191,22 @@ export default function ContactScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
     gap: 16,
-    backgroundColor: '#fff',
+    backgroundColor: c.background,
   },
   title: {
     fontSize: 24,
     fontWeight: '700',
+    color: c.text,
   },
   description: {
     fontSize: 15,
-    color: '#666',
+    color: c.textSecondary,
   },
   favoritesRow: {
     flexDirection: 'row',
@@ -208,7 +215,7 @@ const styles = StyleSheet.create({
   },
   favoritesLabel: {
     fontSize: 14,
-    color: '#444',
+    color: c.textSecondary,
   },
   centerSpinner: {
     marginTop: 40,
@@ -217,18 +224,18 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   message: {
-    color: '#888',
+    color: c.textSecondary,
     fontSize: 14,
   },
   retryButton: {
     alignSelf: 'flex-start',
-    backgroundColor: '#333',
+    backgroundColor: c.neutralButton,
     borderRadius: 10,
     paddingVertical: 10,
     paddingHorizontal: 16,
   },
   retryButtonText: {
-    color: '#fff',
+    color: c.onNeutralButton,
     fontSize: 14,
     fontWeight: '600',
   },
@@ -236,9 +243,9 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   sectionTitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
-    color: '#444',
+    color: c.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     paddingTop: 12,
@@ -251,7 +258,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 14,
     marginBottom: 8,
-    backgroundColor: '#f7f7f7',
+    backgroundColor: c.surface,
     borderRadius: 12,
   },
   rowText: {
@@ -260,11 +267,11 @@ const styles = StyleSheet.create({
   },
   rowName: {
     fontSize: 15,
-    color: '#222',
+    color: c.text,
   },
   rowPhone: {
-    fontSize: 12,
-    color: '#999',
+    fontSize: 14,
+    color: c.textSecondary,
   },
   contactsLink: {
     flexDirection: 'row',
@@ -273,16 +280,16 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 12,
     borderTopWidth: 1,
-    borderTopColor: '#eee',
+    borderTopColor: c.border,
   },
   contactsLinkText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#333',
+    color: c.textSecondary,
   },
   pickerError: {
-    color: '#c62828',
-    fontSize: 12,
+    color: c.danger,
+    fontSize: 14,
     textAlign: 'center',
   },
 });
