@@ -1,0 +1,11 @@
+<!-- Status bar icon: the app's 2x2 tile logo, drawn in white as Android requires for small icons. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+  android:width="24dp"
+  android:height="24dp"
+  android:viewportWidth="24"
+  android:viewportHeight="24">
+  <path android:fillColor="#FFFFFFFF" android:pathData="M5,3h4a2,2 0,0 1,2 2v4a2,2 0,0 1,-2 2h-4a2,2 0,0 1,-2 -2v-4a2,2 0,0 1,2 -2z" />
+  <path android:fillColor="#FFFFFFFF" android:pathData="M13,7a4,4 0,1 1,8 0a4,4 0,1 1,-8 0z" />
+  <path android:fillColor="#FFFFFFFF" android:pathData="M5,13h4a2,2 0,0 1,2 2v4a2,2 0,0 1,-2 2h-4a2,2 0,0 1,-2 -2v-4a2,2 0,0 1,2 -2z" />
+  <path android:fillColor="#FFFFFFFF" android:pathData="M15,13h4a2,2 0,0 1,2 2v4a2,2 0,0 1,-2 2h-4a2,2 0,0 1,-2 -2v-4a2,2 0,0 1,2 -2z" />
+</vector>

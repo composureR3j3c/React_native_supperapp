@@ -4,6 +4,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
+import Section from '../../components/Section';
 import useFavoriteContacts from '../../hooks/useFavoriteContacts';
 import useLocations from '../../hooks/useLocations';
 import { callNumber, openInMaps, openSpotify, openYouTube } from '../../lib/openApps';
@@ -22,23 +23,6 @@ function initials(name) {
     .slice(0, 2)
     .map((word) => word[0].toUpperCase());
   return letters.join('') || '?';
-}
-
-function Section({ title, actionLabel, onAction, children }) {
-  const styles = useThemedStyles(makeStyles);
-  return (
-    <View style={styles.section}>
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>{title}</Text>
-        {actionLabel ? (
-          <Pressable onPress={onAction} hitSlop={10} accessibilityRole="link">
-            <Text style={styles.sectionAction}>{actionLabel}</Text>
-          </Pressable>
-        ) : null}
-      </View>
-      {children}
-    </View>
-  );
 }
 
 export default function DashboardScreen() {
@@ -206,26 +190,6 @@ const makeStyles = (c) =>
     content: {
       padding: PADDING,
       gap: 24,
-    },
-    section: {
-      gap: 10,
-    },
-    sectionHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-    },
-    sectionTitle: {
-      fontSize: 14,
-      fontWeight: '700',
-      color: c.textSecondary,
-      textTransform: 'uppercase',
-      letterSpacing: 0.5,
-    },
-    sectionAction: {
-      fontSize: 14,
-      fontWeight: '600',
-      color: c.primary,
     },
     row: {
       flexDirection: 'row',

@@ -1,0 +1,1 @@
+int drawable ic_quick_launch 0x0

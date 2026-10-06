@@ -1,0 +1,55 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="expo.modules.quicklaunch" >
+4
+5    <uses-sdk android:minSdkVersion="24" />
+6
+7    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+7-->D:\proj\super-app\modules\quick-launch\android\src\main\AndroidManifest.xml:2:3-75
+7-->D:\proj\super-app\modules\quick-launch\android\src\main\AndroidManifest.xml:2:20-72
+8    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+8-->D:\proj\super-app\modules\quick-launch\android\src\main\AndroidManifest.xml:3:3-75
+8-->D:\proj\super-app\modules\quick-launch\android\src\main\AndroidManifest.xml:3:20-72
+9    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+9-->D:\proj\super-app\modules\quick-launch\android\src\main\AndroidManifest.xml:4:3-87
+9-->D:\proj\super-app\modules\quick-launch\android\src\main\AndroidManifest.xml:4:20-84
+10    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+10-->D:\proj\super-app\modules\quick-launch\android\src\main\AndroidManifest.xml:5:3-79
+10-->D:\proj\super-app\modules\quick-launch\android\src\main\AndroidManifest.xml:5:20-76
+11
+12    <application>
+12-->D:\proj\super-app\modules\quick-launch\android\src\main\AndroidManifest.xml:7:3-25:17
+13
+14        <!-- Does no background work: it only keeps the quick-launch notification pinned. -->
+15        <service
+15-->D:\proj\super-app\modules\quick-launch\android\src\main\AndroidManifest.xml:9:5-16:15
+16            android:name="expo.modules.quicklaunch.QuickLaunchService"
+16-->D:\proj\super-app\modules\quick-launch\android\src\main\AndroidManifest.xml:10:7-65
+17            android:exported="false"
+17-->D:\proj\super-app\modules\quick-launch\android\src\main\AndroidManifest.xml:11:7-31
+18            android:foregroundServiceType="specialUse" >
+18-->D:\proj\super-app\modules\quick-launch\android\src\main\AndroidManifest.xml:12:7-49
+19            <property
+19-->D:\proj\super-app\modules\quick-launch\android\src\main\AndroidManifest.xml:13:7-15:79
+20                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+20-->D:\proj\super-app\modules\quick-launch\android\src\main\AndroidManifest.xml:14:9-68
+21                android:value="Persistent notification shortcut that opens the app" />
+21-->D:\proj\super-app\modules\quick-launch\android\src\main\AndroidManifest.xml:15:9-76
+22        </service>
+23
+24        <receiver
+24-->D:\proj\super-app\modules\quick-launch\android\src\main\AndroidManifest.xml:18:5-24:16
+25            android:name="expo.modules.quicklaunch.QuickLaunchBootReceiver"
+25-->D:\proj\super-app\modules\quick-launch\android\src\main\AndroidManifest.xml:19:7-70
+26            android:exported="true" >
+26-->D:\proj\super-app\modules\quick-launch\android\src\main\AndroidManifest.xml:20:7-30
+27            <intent-filter>
+27-->D:\proj\super-app\modules\quick-launch\android\src\main\AndroidManifest.xml:21:7-23:23
+28                <action android:name="android.intent.action.BOOT_COMPLETED" />
+28-->D:\proj\super-app\modules\quick-launch\android\src\main\AndroidManifest.xml:22:9-71
+28-->D:\proj\super-app\modules\quick-launch\android\src\main\AndroidManifest.xml:22:17-68
+29            </intent-filter>
+30        </receiver>
+31    </application>
+32
+33</manifest>

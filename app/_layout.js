@@ -3,11 +3,12 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useFonts } from 'expo-font';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider as NavigationThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import ThemeToggle from '../components/ThemeToggle';
+import { restoreQuickLaunch } from '../lib/quickLaunch';
 import { ThemeProvider, useTheme } from '../theme/ThemeProvider';
 
 function ThemedApp() {
@@ -40,6 +41,10 @@ function ThemedApp() {
 }
 
 export default function RootLayout() {
+  useEffect(() => {
+    restoreQuickLaunch().catch(() => {});
+  }, []);
+
   const [fontsLoaded, fontError] = useFonts({ ...Ionicons.font, ...MaterialCommunityIcons.font });
 
   if (!fontsLoaded && !fontError) {

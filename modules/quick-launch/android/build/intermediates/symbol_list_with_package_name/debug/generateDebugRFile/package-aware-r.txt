@@ -1,0 +1,2 @@
+expo.modules.quicklaunch
+drawable ic_quick_launch

@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Alert, Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { requestPinWidget } from 'react-native-android-widget';
 
 import AppTile from '../../components/AppTile';
@@ -14,7 +14,7 @@ const APPS = [
 
  { key: 'tasks', href: '/tasks', label: 'Tasks', icon: 'checkbox' },
   
-   { key: 'profile', href: '/profile', label: 'Profile', icon: 'person' },
+  { key: 'settings', href: '/settings', label: 'Settings', icon: 'settings' },
 ];
 
 const COLUMNS = 2;
@@ -36,9 +36,8 @@ export default function AppsScreen() {
   const styles = useThemedStyles(makeStyles);
   const { width } = useWindowDimensions();
   const tileSize = (width - CONTAINER_PADDING * 2 - GRID_GAP * (COLUMNS - 1)) / COLUMNS;
-
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
       <Text style={styles.title}>Apps</Text>
       <View style={[styles.grid, { gap: GRID_GAP }]}>
         {APPS.map((app) => (
@@ -51,16 +50,18 @@ export default function AppsScreen() {
           <Text style={styles.pinButtonText}>Add button to home screen</Text>
         </Pressable>
       )}
-    </View>
+    </ScrollView>
   );
 }
 
 const makeStyles = (c) =>
   StyleSheet.create({
-  container: {
+  scroll: {
     flex: 1,
-    padding: CONTAINER_PADDING,
     backgroundColor: c.background,
+  },
+  container: {
+    padding: CONTAINER_PADDING,
   },
   title: {
     fontSize: 24,
