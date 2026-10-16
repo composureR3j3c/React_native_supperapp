@@ -24,7 +24,8 @@
         "android.permission.WRITE_CONTACTS",
         "android.permission.READ_SMS"
       ],
-      "package": "com.bereket1.superapp"
+      "package": "com.bereket1.DriverAssistant",
+      "versionCode": 1
     },
     "web": {
       "favicon": "./assets/favicon.png",
