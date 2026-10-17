@@ -14,18 +14,21 @@ import {
 import DraggableFlatList, { ScaleDecorator } from 'react-native-draggable-flatlist';
 
 import useTasks from '../hooks/useTasks';
+import { setDaily } from '../lib/dailyTasks';
 import { PRIORITY_LABELS, PRIORITY_ORDER } from '../lib/priority';
 import { useTheme, useThemedStyles } from '../theme/ThemeProvider';
 
 export default function TasksScreen() {
   const { colors } = useTheme();
   const styles = useThemedStyles(makeStyles);
-  const { tasks, loaded, addTask, toggleTask, deleteTask, cyclePriority, setAllTasks } = useTasks();
+  const { tasks, loaded, today, addTask, toggleTask, toggleDaily, deleteTask, cyclePriority, setAllTasks } =
+    useTasks();
   const [title, setTitle] = useState('');
+  const [addAsDaily, setAddAsDaily] = useState(false);
   const [hideCompleted, setHideCompleted] = useState(false);
 
   const handleAdd = () => {
-    addTask(title);
+    addTask(title, { daily: addAsDaily });
     setTitle('');
   };
 
@@ -34,13 +37,23 @@ export default function TasksScreen() {
     [tasks, hideCompleted]
   );
 
+  const dailyStats = useMemo(() => {
+    const daily = tasks.filter((task) => task.daily);
+    return { total: daily.length, done: daily.filter((task) => task.done).length };
+  }, [tasks]);
+
+  // Daily tasks get their own section at the top; everything else is grouped by priority.
   const sections = useMemo(
     () =>
-      PRIORITY_ORDER.map((priority) => ({
-        priority,
-        title: PRIORITY_LABELS[priority],
-        data: visibleTasks.filter((task) => (task.priority ?? 'none') === priority),
-      })).filter((section) => section.data.length > 0),
+      [
+        { key: 'daily', daily: true, title: 'Daily', data: visibleTasks.filter((task) => task.daily) },
+        ...PRIORITY_ORDER.map((priority) => ({
+          key: priority,
+          priority,
+          title: PRIORITY_LABELS[priority],
+          data: visibleTasks.filter((task) => !task.daily && (task.priority ?? 'none') === priority),
+        })),
+      ].filter((section) => section.data.length > 0),
     [visibleTasks]
   );
 
@@ -49,30 +62,37 @@ export default function TasksScreen() {
     sections.forEach((section) => {
       out.push({
         type: 'header',
-        key: `header-${section.priority}`,
+        key: `header-${section.key}`,
+        daily: section.daily === true,
         priority: section.priority,
         title: section.title,
-        count: section.data.length,
+        count: section.daily ? `${dailyStats.done}/${dailyStats.total} today` : section.data.length,
       });
       section.data.forEach((task) => out.push({ type: 'task', key: task.id, task }));
     });
     return out;
-  }, [sections]);
+  }, [sections, dailyStats]);
 
+  // Dropping a task under a header moves it into that group: Daily, or a priority level.
   const handleDragEnd = ({ data, from }) => {
     const movedKey = flatData[from]?.key;
     if (!movedKey) return;
 
-    let currentPriority = 'none';
+    let currentHeader = null;
     const reordered = [];
     data.forEach((entry) => {
       if (entry.type === 'header') {
-        currentPriority = entry.priority;
+        currentHeader = entry;
         return;
       }
-      reordered.push(
-        entry.key === movedKey ? { ...entry.task, priority: currentPriority } : entry.task
-      );
+      if (entry.key !== movedKey || !currentHeader) {
+        reordered.push(entry.task);
+      } else if (currentHeader.daily) {
+        reordered.push(entry.task.daily ? entry.task : setDaily(entry.task, true, today));
+      } else {
+        const regular = entry.task.daily ? setDaily(entry.task, false, today) : entry.task;
+        reordered.push({ ...regular, priority: currentHeader.priority });
+      }
     });
 
     // Tasks hidden by "Hide completed" aren't part of flatData — keep them, just append after.
@@ -92,13 +112,22 @@ export default function TasksScreen() {
             <TextInput
               placeholderTextColor={colors.placeholder}
               style={styles.input}
-              placeholder="Add a task..."
+              placeholder={addAsDaily ? 'Add a daily task...' : 'Add a task...'}
               value={title}
               onChangeText={setTitle}
               onSubmitEditing={handleAdd}
               returnKeyType="done"
             />
-            <Pressable style={styles.addButton} onPress={handleAdd}>
+            <Pressable
+              style={[styles.dailyToggle, addAsDaily && styles.dailyToggleOn]}
+              onPress={() => setAddAsDaily((value) => !value)}
+              accessibilityRole="switch"
+              accessibilityState={{ checked: addAsDaily }}
+              accessibilityLabel="Add as daily task"
+            >
+              <Ionicons name="repeat" size={22} color={addAsDaily ? colors.onPrimary : colors.textSecondary} />
+            </Pressable>
+            <Pressable style={styles.addButton} onPress={handleAdd} accessibilityLabel="Add task">
               <Ionicons name="add" size={22} color={colors.onNeutralButton} />
             </Pressable>
           </View>
@@ -125,7 +154,11 @@ export default function TasksScreen() {
                 if (entry.type === 'header') {
                   return (
                     <View style={styles.sectionHeader}>
-                      <View style={[styles.sectionDot, { backgroundColor: colors.priority[entry.priority] }]} />
+                      {entry.daily ? (
+                        <Ionicons name="repeat" size={16} color={colors.primary} />
+                      ) : (
+                        <View style={[styles.sectionDot, { backgroundColor: colors.priority[entry.priority] }]} />
+                      )}
                       <Text style={styles.sectionTitle}>{entry.title}</Text>
                       <Text style={styles.sectionCount}>{entry.count}</Text>
                     </View>
@@ -141,7 +174,7 @@ export default function TasksScreen() {
                         onLongPress={drag}
                         disabled={isActive}
                         hitSlop={8}
-                        accessibilityLabel="Drag to reorder or change priority group"
+                        accessibilityLabel="Drag to reorder, or into Daily or a priority group"
                       >
                         <Ionicons name="reorder-three-outline" size={22} color={colors.textSecondary} />
                       </Pressable>
@@ -154,6 +187,19 @@ export default function TasksScreen() {
                         <Text style={[styles.rowText, item.done && styles.rowTextDone]} numberOfLines={2}>
                           {item.title}
                         </Text>
+                      </Pressable>
+                      <Pressable
+                        onPress={() => toggleDaily(item.id)}
+                        hitSlop={8}
+                        accessibilityRole="switch"
+                        accessibilityState={{ checked: item.daily === true }}
+                        accessibilityLabel="Repeat daily"
+                      >
+                        <Ionicons
+                          name="repeat"
+                          size={20}
+                          color={item.daily ? colors.primary : colors.textSecondary}
+                        />
                       </Pressable>
                       <Pressable
                         onPress={() => cyclePriority(item.id)}
@@ -205,6 +251,19 @@ const makeStyles = (c) =>
     paddingHorizontal: 14,
     paddingVertical: 10,
     fontSize: 15,
+  },
+  dailyToggle: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: c.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dailyToggleOn: {
+    backgroundColor: c.primary,
+    borderColor: c.primary,
   },
   addButton: {
     width: 44,
