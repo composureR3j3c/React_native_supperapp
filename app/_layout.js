@@ -43,6 +43,8 @@ function ThemedApp() {
         }}
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }} />
+        {/* Wallet has its own tab bar, which handles the bottom inset itself. */}
+        <Stack.Screen name="wallet" options={{ title: 'Wallet', contentStyle: { backgroundColor: colors.background } }} />
       </Stack>
     </NavigationThemeProvider>
   );
