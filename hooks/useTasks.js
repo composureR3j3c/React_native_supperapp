@@ -78,6 +78,10 @@ export default function useTasks() {
     [storedTasks, persist]
   );
 
+  const clearAllTasks = useCallback(() => {
+    persist([]);
+  }, [persist]);
+
   const cyclePriority = useCallback(
     (id) => {
       persist(
@@ -95,6 +99,7 @@ export default function useTasks() {
     toggleTask,
     toggleDaily,
     deleteTask,
+    clearAllTasks,
     cyclePriority,
     setAllTasks: persist,
   };

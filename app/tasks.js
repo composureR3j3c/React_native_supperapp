@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Stack } from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -21,8 +22,18 @@ import { useTheme, useThemedStyles } from '../theme/ThemeProvider';
 export default function TasksScreen() {
   const { colors } = useTheme();
   const styles = useThemedStyles(makeStyles);
-  const { tasks, loaded, today, addTask, toggleTask, toggleDaily, deleteTask, cyclePriority, setAllTasks } =
-    useTasks();
+  const {
+    tasks,
+    loaded,
+    today,
+    addTask,
+    toggleTask,
+    toggleDaily,
+    deleteTask,
+    clearAllTasks,
+    cyclePriority,
+    setAllTasks,
+  } = useTasks();
   const [title, setTitle] = useState('');
   const [addAsDaily, setAddAsDaily] = useState(false);
   const [hideCompleted, setHideCompleted] = useState(false);
@@ -30,6 +41,13 @@ export default function TasksScreen() {
   const handleAdd = () => {
     addTask(title, { daily: addAsDaily });
     setTitle('');
+  };
+
+  const confirmClearAll = () => {
+    Alert.alert('Clear all tasks?', `This deletes all ${tasks.length} tasks, including daily ones.`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Clear all', style: 'destructive', onPress: clearAllTasks },
+    ]);
   };
 
   const visibleTasks = useMemo(
@@ -102,7 +120,17 @@ export default function TasksScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: 'Tasks' }} />
+      <Stack.Screen
+        options={{
+          title: 'Tasks',
+          headerRight: () =>
+            tasks.length > 0 ? (
+              <Pressable onPress={confirmClearAll} hitSlop={8} accessibilityLabel="Clear all tasks">
+                <Text style={styles.clearAll}>Clear all</Text>
+              </Pressable>
+            ) : null,
+        }}
+      />
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -272,6 +300,11 @@ const makeStyles = (c) =>
     backgroundColor: c.neutralButton,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  clearAll: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: c.danger,
   },
   hideRow: {
     flexDirection: 'row',
