@@ -7,12 +7,14 @@ import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } fr
 import Section from '../../components/Section';
 import useFavoriteContacts from '../../hooks/useFavoriteContacts';
 import useLocations from '../../hooks/useLocations';
+import useTopAccounts from '../../hooks/useTopAccounts';
 import { callNumber, openInMaps, openSpotify, openYouTube } from '../../lib/openApps';
 import { useTheme, useThemedStyles } from '../../theme/ThemeProvider';
 
 const TOP_PLACES = 2;
 const MAX_CONTACTS = 8;
 const CONTACT_COLUMNS = 4;
+const TOP_ACCOUNTS = 4;
 const PADDING = 20;
 const GAP = 12;
 
@@ -25,6 +27,10 @@ function initials(name) {
   return letters.join('') || '?';
 }
 
+function formatAmount(amount, currency) {
+  return `${currency} ${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
 export default function DashboardScreen() {
   const { colors } = useTheme();
   const styles = useThemedStyles(makeStyles);
@@ -34,13 +40,18 @@ export default function DashboardScreen() {
     useFavoriteContacts();
   const [favoriteContacts, setFavoriteContacts] = useState([]);
   const [contactsAllowed, setContactsAllowed] = useState(true);
+  const { accounts, status: walletStatus, load: loadAccounts } = useTopAccounts(TOP_ACCOUNTS);
+  const [amountsHidden, setAmountsHidden] = useState(true);
 
   // Places and favorites are edited on other screens, so refresh whenever the dashboard comes back into view.
   useFocusEffect(
     useCallback(() => {
       reloadLocations();
       reloadFavorites();
-    }, [reloadLocations, reloadFavorites])
+      loadAccounts();
+      // Hide balances again whenever the dashboard is left, so they never stay on screen by accident.
+      return () => setAmountsHidden(true);
+    }, [reloadLocations, reloadFavorites, loadAccounts])
   );
 
   const loadFavoriteContacts = useCallback(async () => {
@@ -177,6 +188,42 @@ export default function DashboardScreen() {
           </View>
         )}
       </Section>
+
+      {walletStatus === 'needsPermission' ? (
+        <Section title="Wallet" actionLabel="Open wallet" onAction={() => router.push('/wallet')}>
+          <Pressable style={styles.inlineButton} onPress={() => router.push('/wallet')}>
+            <Ionicons name="wallet" size={20} color={colors.onNeutralButton} />
+            <Text style={styles.inlineButtonText}>Allow SMS in Wallet to show balances</Text>
+          </Pressable>
+        </Section>
+      ) : walletStatus === 'ready' && accounts.length > 0 ? (
+        <Section
+          title="Wallet"
+          actionLabel={amountsHidden ? 'Show amounts' : 'Hide amounts'}
+          onAction={() => setAmountsHidden((value) => !value)}
+        >
+          <View style={[styles.row, styles.wrap]}>
+            {accounts.map((account) => (
+              <Pressable
+                key={account.id}
+                style={styles.accountCard}
+                onPress={() => router.push('/wallet')}
+                accessibilityLabel={`${account.sender}${account.accountLast4 ? ` ending ${account.accountLast4}` : ''}, open wallet`}
+              >
+                <Text style={styles.accountSender} numberOfLines={1}>
+                  {account.sender}
+                </Text>
+                <Text style={styles.accountMeta}>
+                  {account.accountLast4 ? `•••• ${account.accountLast4}` : ' '}
+                </Text>
+                <Text style={styles.accountBalance} numberOfLines={1} adjustsFontSizeToFit>
+                  {amountsHidden ? '••••••' : formatAmount(account.balance, account.currency)}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </Section>
+      ) : null}
     </ScrollView>
   );
 }
@@ -266,6 +313,32 @@ const makeStyles = (c) =>
       fontSize: 14,
       fontWeight: '600',
       color: c.text,
+    },
+    accountCard: {
+      // Two cards per row.
+      width: '48%',
+      flexGrow: 1,
+      borderRadius: 16,
+      padding: 14,
+      gap: 4,
+      backgroundColor: c.surface,
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+    accountSender: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: c.text,
+    },
+    accountMeta: {
+      fontSize: 14,
+      color: c.textSecondary,
+    },
+    accountBalance: {
+      fontSize: 17,
+      fontWeight: '700',
+      color: c.text,
+      marginTop: 4,
     },
     inlineButton: {
       flexDirection: 'row',
